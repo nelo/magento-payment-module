@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <virtualType name="NeloConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="string">nelo</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloLogger" type="Magento\Payment\Model\Method\Logger">
+        <arguments>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="CreateCheckoutTransferFactory" type="Nelo\Bnpl\Gateway\Http\TransferFactory">
+        <arguments>
+            <argument name="method" xsi:type="const">Nelo\Bnpl\Gateway\Http\TransferFactory::HTTP_METHOD_POST</argument>
+            <argument name="endpoint" xsi:type="const">Nelo\Bnpl\Gateway\Http\TransferFactory::CREATE_CHECKOUT_ENDPOINT</argument>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="GetPaymentTransferFactory" type="Nelo\Bnpl\Gateway\Http\TransferFactory">
+        <arguments>
+            <argument name="method" xsi:type="const">Nelo\Bnpl\Gateway\Http\TransferFactory::HTTP_METHOD_GET</argument>
+            <argument name="endpoint" xsi:type="const">Nelo\Bnpl\Gateway\http\TransferFactory::GET_PAYMENT_ENDPOINT</argument>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="CapturePaymentTransferFactory" type="Nelo\Bnpl\Gateway\Http\TransferFactory">
+        <arguments>
+            <argument name="method" xsi:type="const">Nelo\Bnpl\Gateway\Http\TransferFactory::HTTP_METHOD_POST</argument>
+            <argument name="endpoint" xsi:type="const">Nelo\Bnpl\Gateway\http\TransferFactory::CAPTURE_PAYMENT_ENDPOINT</argument>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Nelo\Bnpl\Block\Info">
+        <arguments>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </type>
+    <virtualType name="NeloFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="string">nelo</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Nelo\Bnpl\Block\Info</argument>
+            <argument name="valueHandlerPool" xsi:type="object">NeloValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">NeloValidatorPool</argument>
+            <argument name="commandPool" xsi:type="object">NeloCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">NeloDefaultValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloDefaultValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
+        <arguments>
+            <argument name="validators" xsi:type="array">
+                <item name="country" xsi:type="string">NeloCountryValidator</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloCountryValidator" type="Magento\Payment\Gateway\Validator\CountryValidator">
+        <arguments>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloZendHttpClient" type="Nelo\Bnpl\Gateway\Http\Client\Zend">
+        <arguments>
+            <argument name="logger" xsi:type="object">NeloLogger</argument>
+            <argument name="converter" xsi:type="object">Nelo\Bnpl\Gateway\Http\Converter\JsonToArray</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="NeloCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="initialize" xsi:type="string">Nelo\Bnpl\Gateway\Command\InitializeCommand</item>
+                <item name="create_checkout" xsi:type="string">Nelo\Bnpl\Gateway\Command\CreateCheckoutCommand</item>
+                <item name="capture" xsi:type="string">Nelo\Bnpl\Gateway\Command\CaptureCommand</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Nelo\Bnpl\Gateway\Command\CreateCheckoutCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">CreateCheckoutDataBuilder</argument>
+            <argument name="transferFactory" xsi:type="object">CreateCheckoutTransferFactory</argument>
+            <argument name="client" xsi:type="object">NeloZendHttpClient</argument>
+            <argument name="validator" xsi:type="object">Nelo\Bnpl\Gateway\Validator\CreateCheckoutValidator</argument>
+        </arguments>
+    </type>
+    <virtualType name="CreateCheckoutDataBuilder" type="Magento\Payment\Gateway\Request\BuilderComposite">
+        <arguments>
+            <argument name="builders" xsi:type="array">
+                <item name="order_details" xsi:type="string">Nelo\Bnpl\Gateway\Request\CreateCheckoutDataBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Nelo\Bnpl\Gateway\Command\CaptureCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">CapturePaymentDataBuilder</argument>
+            <argument name="getPaymentTransferFactory" xsi:type="object">GetPaymentTransferFactory</argument>
+            <argument name="capturePaymentTransferFactory" xsi:type="object">CapturePaymentTransferFactory</argument>
+            <argument name="client" xsi:type="object">NeloZendHttpClient</argument>
+            <argument name="validator" xsi:type="object">Nelo\Bnpl\Gateway\Validator\CaptureValidator</argument>
+            <argument name="paymentCapturedHandler" xsi:type="object">Nelo\Bnpl\Gateway\Response\PaymentCapturedHandler</argument>
+        </arguments>
+    </type>
+    <virtualType name="CapturePaymentDataBuilder" type="Magento\Payment\Gateway\Request\BuilderComposite">
+        <arguments>
+            <argument name="builders" xsi:type="array">
+                <item name="path_variables" xsi:type="string">Nelo\Bnpl\Gateway\Request\CapturePaymentDataBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+</config>

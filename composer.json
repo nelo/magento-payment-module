@@ -1,0 +1,20 @@
+{
+    "name": "nelo/magento-payment-module",
+    "description": "Nelo Bnpl Payment Gateway",
+    "require": {
+        "php": "~7.4.0"
+    },
+    "type": "magento2-module",
+    "license": [
+        "OSL-3.0",
+        "AFL-3.0"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Nelo\\Bnpl\\": ""
+        }
+    }
+}
