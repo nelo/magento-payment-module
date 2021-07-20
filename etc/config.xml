@@ -6,6 +6,7 @@
                 <active>1</active>
                 <model>NeloFacade</model>
                 <api_key backend_model="Magento\Config\Model\Config\Backend\Encrypted"/>
+                <publishable_api_key/>
                 <sandbox_flag>1</sandbox_flag>
                 <order_status>pending_payment</order_status>
                 <title>Nelo</title>

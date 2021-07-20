@@ -21,7 +21,7 @@
                                                                     <item name="component" xsi:type="string">Nelo_Bnpl/js/view/payment/nelo</item>
                                                                     <item name="methods" xsi:type="array">
                                                                         <item name="nelo" xsi:type="array">
-                                                                            <item name="isBillingAddressRequired" xsi:type="boolean">true</item>
+                                                                            <item name="isBillingAddressRequired" xsi:type="boolean">false</item>
                                                                         </item>
                                                                     </item>
                                                                 </item>
