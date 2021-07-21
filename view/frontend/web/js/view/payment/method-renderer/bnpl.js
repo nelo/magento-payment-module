@@ -20,19 +20,18 @@ define([
                 self = this;
                 self._super();
 
-                if (typeof nelo == "undefined") {
-                    $.when(self._loadScripts()).done(function() {
-                        self._setPrice();
-                    });
-                } else {
-                    self._setPrice();
-                }
+                self._setPrice();
                 quote.totals.subscribe(function(newValue) {
                     self._setPrice(newValue);
                 });
             },
 
-            _setPrice: function(newValue) {
+            _setPrice: function(newPrice) {
+                let price = self.getPriceUpdated(newPrice);
+                self._changePriceInDom(price);
+            },
+
+            getPriceUpdated: function(newValue) {
                 self = this;
                 let price = quote.getTotals()();
                 if (newValue) {
@@ -45,8 +44,8 @@ define([
                     } else {
                         result = price.base_grand_total;
                     }
-                    self._changePriceInDom(Math.round(result * 100));
                 }
+                return result * 100;
             },
 
             _changePriceInDom: function(price) {
@@ -62,10 +61,12 @@ define([
                 const configScript = document.createElement('script');
                 const publishableApiKey = window.checkoutConfig.payment.bnpl.publishableApiKey;
                 const isSandboxMode = window.checkoutConfig.payment.bnpl.isSandboxMode;
+                console.log("sandbox " + isSandboxMode);
+                const environment = (isSandboxMode ? 'sandbox' : 'production')
                 configScript.type = 'text/javascript';
                 configScript.text = '_neloConfig={' +
                 'publishableKey: \' ' + publishableApiKey + '\', ' +
-                'environment: \'' + isSandboxMode ? 'sandbox' : 'production' + '\'' +
+                'environment: \'' + environment + '\'' +
                     '};';
                 head.appendChild(configScript);
 

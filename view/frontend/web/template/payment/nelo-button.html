@@ -5,7 +5,7 @@
                class="radio"
                data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()"/>
         <label class="label" data-bind="attr: {'for': getCode()}">
-            <span class="nelo-as-low-as" data-currency-code="MXN"></span>
+            <span class="nelo-as-low-as" data-currency-code="MXN" data-bind="attr: {'data-amount': getPriceUpdated(), 'data-load': _loadScripts()}"></span>
         </label>
     </div>
     <div class="payment-method-content">
