@@ -5,29 +5,11 @@
                class="radio"
                data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()"/>
         <label class="label" data-bind="attr: {'for': getCode()}">
-            <span class="nelo-as-low-as" data-currency-code="MXN" data-bind="attr: {'data-amount': getPriceUpdated(), 'data-load': _loadScripts()}"></span>
-            <div class="nelo-education-card" data-collapsed="true"></div>
+            <span class="nelo-as-low-as" data-currency-code="MXN" data-bind="attr: {'data-amount': getPriceUpdated()}"></span>
         </label>
     </div>
     <div class="payment-method-content">
-        <!-- ko foreach: getRegion('messages') -->
-        <!-- ko template: getTemplate() --><!-- /ko -->
-        <!--/ko-->
-        <div class="payment-method-billing-address">
-            <!-- ko foreach: $parent.getRegion(getBillingAddressFormName()) -->
-            <!-- ko template: getTemplate() --><!-- /ko -->
-            <!--/ko-->
-        </div>
-        <fieldset class="fieldset" data-bind='attr: {id: "payment_form_" + getCode()}'>
-            <div class="payment-method-note">
-                <!-- ko i18n: 'You will be redirected to the Nelo website.' --><!-- /ko -->
-            </div>
-        </fieldset>
-        <div class="checkout-agreements-block">
-            <!-- ko foreach: $parent.getRegion('before-place-order') -->
-            <!-- ko template: getTemplate() --><!-- /ko -->
-            <!--/ko-->
-        </div>
+        <div class="nelo-education-card" data-collapsed="false" data-bind="attr: {'data-load': _loadScripts()}"></div>
         <div class="actions-toolbar">
             <div class="primary">
                 <button data-role="review-save"
@@ -36,8 +18,7 @@
                         attr: {title: $t('Continue with Nelo')},
                         enable: (getCode() == isChecked()),
                         click: continueToNelo,
-                        css: {disabled: !isPlaceOrderActionAllowed()}
-                        "
+                        css: {disabled: !isPlaceOrderActionAllowed()}"
                         class="action primary checkout"
                         disabled>
                     <span data-bind="i18n: 'Continue with Nelo'"></span>
