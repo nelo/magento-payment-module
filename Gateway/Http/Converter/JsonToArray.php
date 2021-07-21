@@ -51,7 +51,7 @@ class JsonToArray implements ConverterInterface
             return $this->serializer->unserialize($response);
         } catch (\Exception $e) {
             $this->logger->critical('Can\'t read response from Nelo');
-            throw new ConverterException(__('Can\'t read response from Nelo'));
+            throw new ConverterException(__('Can\'t process response from Nelo'));
         }
     }
 }

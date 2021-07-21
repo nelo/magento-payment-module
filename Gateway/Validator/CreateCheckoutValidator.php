@@ -38,7 +38,7 @@ class CreateCheckoutValidator extends AbstractResponseValidator
         $validationResult = $this->validateRedirectUrl($response);
 
         if (!$validationResult) {
-            $errorMessages = [__('Something went wrong when get pay url.')];
+            $errorMessages = [__('Something went wrong when trying to get redirect url.')];
         }
 
         return $this->createResult($validationResult, $errorMessages);

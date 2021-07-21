@@ -1,0 +1,6 @@
+"Continue to Nelo", "Continúa hacia Nelo"
+"When interacting with Nelo an unexpected response was received.", "En la interacción con Nelo se recibió una respuesta no esperada."
+"Can't process response from Nelo", "No se puede procesar la respuesta de Nelo"
+"Order %1 in processing state. Transaction id %2 was successful.", "Orden %1 está en estado processing. Transacción con id %2 fue satisfactoria."
+"The received order id (%1) does not match with current order id (%2).", "El id de orden recibido (%1) no es igual al id de orden actual (%2)."
+"Something went wrong when trying to get redirect url.", "Algo salió mal intentando obtener la url de redirección."

@@ -32,7 +32,8 @@ class CaptureValidator extends AbstractResponseValidator
         $errorMessages = [];
 
         if (!$validationResult) {
-            $errorMessages = [__('The received order id does not match with current order id.' )];
+            $errorMessages = [__('The received order id (#%1) does not match with current order id (#%2).',
+                $validationSubject['receivedReference'], $validationSubject['reference'])];
         }
 
         return $this->createResult($validationResult, $errorMessages);

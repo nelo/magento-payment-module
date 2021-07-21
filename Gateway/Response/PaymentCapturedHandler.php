@@ -117,7 +117,7 @@ class PaymentCapturedHandler implements HandlerInterface
     private function updateOrderStatus(Order $order, $paymentId) {
         $order->setState(Order::STATE_PROCESSING);
         $order->setStatus(Order::STATE_PROCESSING);
-        $comment = __(' Order #%1 in processing state. Transaction id #%2 is successful', $order->getId(), $paymentId);
+        $comment = __('Order #%1 in processing state. Transaction id #%2 was successful.', $order->getId(), $paymentId);
         $order->addStatusToHistory(Order::STATE_PROCESSING, $comment,FALSE);
         $this->ordersRepository->save($order);
         $this->logger->info(__FUNCTION__ . ': Order with id ' . $order->getId() . ' was paid and status was set to processing.' );
