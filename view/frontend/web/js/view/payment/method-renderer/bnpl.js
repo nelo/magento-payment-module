@@ -61,7 +61,6 @@ define([
                 const configScript = document.createElement('script');
                 const publishableApiKey = window.checkoutConfig.payment.bnpl.publishableApiKey;
                 const isSandboxMode = window.checkoutConfig.payment.bnpl.isSandboxMode;
-                console.log("sandbox " + isSandboxMode);
                 const environment = (isSandboxMode ? 'sandbox' : 'production')
                 configScript.type = 'text/javascript';
                 configScript.text = '_neloConfig={' +
