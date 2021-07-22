@@ -2,6 +2,9 @@
 
 namespace Nelo\Bnpl\Controller\Payment;
 
+use Magento\Framework\Controller\Result\Redirect;
+use Magento\Framework\Controller\ResultFactory;
+use Magento\Payment\Gateway\ConfigInterface;
 use Nelo\Bnpl\Gateway\Helper\TransactionReader;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
@@ -68,6 +71,11 @@ class Start implements ActionInterface
     private Session $checkoutSession;
 
     /**
+     * @var ResultFactory
+     */
+    protected ResultFactory $resultFactory;
+
+    /**
      * @var PaymentFailuresInterface
      */
     private PaymentFailuresInterface $paymentFailures;
@@ -78,15 +86,21 @@ class Start implements ActionInterface
     private OrderRepositoryInterface $orderRepository;
 
     /**
+     * @var ConfigInterface
+     */
+    private ConfigInterface $config;
+
+    /**
      * Start constructor.
      *
-     * @param Context                       $context
-     * @param CommandPoolInterface          $commandPool
-     * @param LoggerInterface               $logger
-     * @param OrderRepositoryInterface      $orderRepository
-     * @param PaymentDataObjectFactory      $paymentDataObjectFactory
-     * @param Session                       $checkoutSession
+     * @param Context $context
+     * @param CommandPoolInterface $commandPool
+     * @param LoggerInterface $logger
+     * @param OrderRepositoryInterface $orderRepository
+     * @param PaymentDataObjectFactory $paymentDataObjectFactory
+     * @param Session $checkoutSession
      * @param PaymentFailuresInterface|null $paymentFailures
+     * @param ConfigInterface $config
      */
     public function __construct(
         Context $context,
@@ -95,18 +109,21 @@ class Start implements ActionInterface
         OrderRepositoryInterface $orderRepository,
         PaymentDataObjectFactory $paymentDataObjectFactory,
         Session $checkoutSession,
-        PaymentFailuresInterface $paymentFailures = null
+        PaymentFailuresInterface $paymentFailures = null,
+        ConfigInterface $config
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
         $this->_objectManager           = $context->getObjectManager();
         $this->messageManager           = $context->getMessageManager();
+        $this->resultFactory            = $context->getResultFactory();
         $this->commandPool              = $commandPool;
         $this->logger                   = $logger;
         $this->paymentDataObjectFactory = $paymentDataObjectFactory;
         $this->checkoutSession          = $checkoutSession;
         $this->paymentFailures          = $paymentFailures ?: $this->_objectManager->get(PaymentFailuresInterface::class);
         $this->orderRepository          = $orderRepository;
+        $this->config                   = $config;
     }
 
     /**
@@ -139,7 +156,9 @@ class Start implements ActionInterface
             $this->logger->critical($e);
 
             $this->messageManager->addErrorMessage(__('Sorry, but something went wrong.'));
-            return $this->_response->setRedirect('checkout/cart/*');
+            /** @var Redirect $resultRedirect */
+            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
+            return $resultRedirect->setPath($this->config->getValue("redirect_on_nelo_fail"));
         }
     }
 }

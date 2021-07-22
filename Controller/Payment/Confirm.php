@@ -74,12 +74,7 @@ class Confirm implements ActionInterface
     /**
      * @var MethodInterface
      */
-    private $method;
-
-    /**
-     * @var PaymentDataObjectFactory
-     */
-    private $paymentDataObjectFactory;
+    private MethodInterface $method;
 
     /**
      * @var QuoteFactory
@@ -87,26 +82,31 @@ class Confirm implements ActionInterface
     private QuoteFactory $quoteFactory;
 
     /**
+     * @var ConfigInterface
+     */
+    private ConfigInterface $config;
+
+    /**
      * Confirm constructor.
      *
-     * @param Context                  $context
-     * @param Session                  $checkoutSession
-     * @param MethodInterface          $method
-     * @param PaymentDataObjectFactory $paymentDataObjectFactory
+     * @param Context $context
+     * @param Session $checkoutSession
+     * @param MethodInterface $method
      * @param OrderRepositoryInterface $orderRepository
-     * @param CommandPoolInterface     $commandPool
-     * @param QuoteFactory             $quoteFactory
-     * @param LoggerInterface          $logger
+     * @param CommandPoolInterface $commandPool
+     * @param QuoteFactory $quoteFactory
+     * @param LoggerInterface $logger
+     * @param ConfigInterface $config
      */
     public function __construct(
         Context $context,
         Session $checkoutSession,
         MethodInterface $method,
-        PaymentDataObjectFactory $paymentDataObjectFactory,
         OrderRepositoryInterface $orderRepository,
         CommandPoolInterface $commandPool,
         QuoteFactory $quoteFactory,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ConfigInterface $config
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -116,9 +116,9 @@ class Confirm implements ActionInterface
         $this->checkoutSession          = $checkoutSession;
         $this->orderRepository          = $orderRepository;
         $this->method                   = $method;
-        $this->paymentDataObjectFactory = $paymentDataObjectFactory;
         $this->quoteFactory             = $quoteFactory;
         $this->logger                   = $logger;
+        $this->config                   = $config;
     }
 
     /**
@@ -147,16 +147,15 @@ class Confirm implements ActionInterface
                             ]
                         );
                     }
-                    return $resultRedirect->setPath('checkout/onepage/success');
+                    return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_success'));
                 }
             } else {
                 return $this->handleCancel($order);
             }
-//
         } catch (Exception $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
             $this->logger->critical($e->getMessage());
-            return $resultRedirect->setPath('checkout/onepage/failure');
+            return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
         }
     }
 
@@ -177,14 +176,13 @@ class Confirm implements ActionInterface
         $lastQuoteId = $this->checkoutSession->getLastQuoteId();
         $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
         if(!$quote->getId()) {
-            $this->logger->critical('======= no $quote->getId()');
             /** @var Redirect $resultRedirect */
-            return $resultRedirect->setPath('checkout/onepage/failure');
+            return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
         }
         $quote->setIsActive(true)->setReservedOrderId(null)->save();
         $this->checkoutSession->replaceQuote($quote);
 
         /** @var Redirect $resultRedirect */
-        return $resultRedirect->setPath('checkout/cart');
+        return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_fail'));
     }
 }

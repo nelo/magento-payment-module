@@ -10,6 +10,9 @@
                 <sandbox_flag>1</sandbox_flag>
                 <order_status>pending_payment</order_status>
                 <title>Nelo</title>
+                <redirect_on_nelo_success>checkout/onepage/success</redirect_on_nelo_success>
+                <redirect_on_nelo_fail>checkout/cart</redirect_on_nelo_fail>
+                <redirect_on_unexpected_error>checkout/onepage/failure</redirect_on_unexpected_error>
                 <allowspecific>0</allowspecific>
                 <merchant_name>Nelo Partner</merchant_name>
                 <payment_action>authorize_capture</payment_action>
