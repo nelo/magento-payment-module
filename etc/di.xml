@@ -49,6 +49,11 @@
             <argument name="config" xsi:type="object">NeloConfig</argument>
         </arguments>
     </type>
+    <type name="Nelo\Bnpl\Controller\Payment\Confirm">
+        <arguments>
+            <argument name="config" xsi:type="object">NeloConfig</argument>
+        </arguments>
+    </type>
 
     <virtualType name="NeloFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
