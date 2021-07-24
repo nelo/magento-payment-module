@@ -25,27 +25,27 @@ class CreateCheckoutCommand implements CommandInterface
     /**
      * @var BuilderInterface
      */
-    private BuilderInterface $requestBuilder;
+    private $requestBuilder;
 
     /**
      * @var TransferFactoryInterface
      */
-    private TransferFactoryInterface $transferFactory;
+    private $transferFactory;
 
     /**
      * @var ClientInterface
      */
-    private ClientInterface $client;
+    private $client;
 
     /**
      * @var ValidatorInterface
      */
-    private ValidatorInterface $validator;
+    private $validator;
 
     /**
      * @var ArrayResultFactory
      */
-    private ArrayResultFactory $resultFactory;
+    private $resultFactory;
 
     /**
      * Constructor

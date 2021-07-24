@@ -27,12 +27,12 @@ class PaymentCapturedHandler implements HandlerInterface
     /**
      * @var OrderRepositoryInterface
      */
-    private OrderRepositoryInterface $ordersRepository;
+    private $ordersRepository;
 
     /**
      * @var InvoiceService
      */
-    private InvoiceService $invoiceService;
+    private $invoiceService;
 
     /**
      * @var TransactionFactory
@@ -42,27 +42,27 @@ class PaymentCapturedHandler implements HandlerInterface
     /**
      * @var TransactionSearchResultInterfaceFactory
      */
-    private TransactionSearchResultInterfaceFactory $transactionSearchResultFactory;
+    private $transactionSearchResultFactory;
 
     /**
      * @var LoggerInterface
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * @var TransactionRepositoryInterface
      */
-    private TransactionRepositoryInterface $transactionsRepository;
+    private $transactionsRepository;
 
     /**
      * @var OrderPaymentRepositoryInterface
      */
-    private OrderPaymentRepositoryInterface $paymentsRepository;
+    private $paymentsRepository;
 
     /**
      * @var InvoiceRepositoryInterface
      */
-    private InvoiceRepositoryInterface $invoiceRepository;
+    private $invoiceRepository;
 
     /**
      * PaymentCapturedHandler constructor.

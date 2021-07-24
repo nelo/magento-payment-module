@@ -19,7 +19,7 @@ abstract class AbstractResponseValidator implements ValidatorInterface
     /**
      * @var ResultInterfaceFactory
      */
-    private ResultInterfaceFactory $resultInterfaceFactory;
+    private $resultInterfaceFactory;
 
     /**
      * @param ResultInterfaceFactory $resultFactory

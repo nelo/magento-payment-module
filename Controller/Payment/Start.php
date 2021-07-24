@@ -32,17 +32,17 @@ class Start implements ActionInterface
     /**
      * @var RequestInterface
      */
-    protected RequestInterface $_request;
+    protected $_request;
 
     /**
      * @var ResponseInterface
      */
-    protected ResponseInterface $_response;
+    protected $_response;
 
     /**
      * @var ObjectManagerInterface
      */
-    protected ObjectManagerInterface $_objectManager;
+    protected $_objectManager;
 
 
     /**
@@ -53,42 +53,42 @@ class Start implements ActionInterface
     /**
      * @var CommandPoolInterface
      */
-    private CommandPoolInterface $commandPool;
+    private $commandPool;
 
     /**
      * @var LoggerInterface
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * @var PaymentDataObjectFactory
      */
-    private PaymentDataObjectFactory $paymentDataObjectFactory;
+    private $paymentDataObjectFactory;
 
     /**
      * @var Session
      */
-    private Session $checkoutSession;
+    private $checkoutSession;
 
     /**
      * @var ResultFactory
      */
-    protected ResultFactory $resultFactory;
+    protected $resultFactory;
 
     /**
      * @var PaymentFailuresInterface
      */
-    private PaymentFailuresInterface $paymentFailures;
+    private $paymentFailures;
 
     /**
      * @var OrderRepositoryInterface
      */
-    private OrderRepositoryInterface $orderRepository;
+    private $orderRepository;
 
     /**
      * @var ConfigInterface
      */
-    private ConfigInterface $config;
+    private $config;
 
     /**
      * Start constructor.

@@ -46,28 +46,28 @@ class TransferFactory implements TransferFactoryInterface
     /**
      * @var ConfigInterface
      */
-    private ConfigInterface $config;
+    private $config;
 
     /**
      * @var Json
      */
-    private Json $serializer;
+    private $serializer;
 
     /**
      * @var TransferBuilder
      */
-    protected TransferBuilder $transferBuilder;
+    protected $transferBuilder;
 
 
     /**
      * @var string
      */
-    private string $method;
+    private $method;
 
     /**
      * @var string
      */
-    private string $endpoint;
+    private $endpoint;
 
     /**
      * TransferFactory constructor.

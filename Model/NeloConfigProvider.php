@@ -18,22 +18,22 @@ class NeloConfigProvider implements ConfigProviderInterface
     /**
      * @var ResolverInterface
      */
-    protected ResolverInterface $localeResolver;
+    protected $localeResolver;
 
     /**
      * @var PaymentHelper
      */
-    protected PaymentHelper $paymentHelper;
+    protected $paymentHelper;
 
     /**
      * @var UrlInterface
      */
-    protected UrlInterface $urlBuilder;
+    protected $urlBuilder;
 
     /**
      * @var ConfigInterface
      */
-    private ConfigInterface $config;
+    private $config;
 
     /**
      * NeloConfigProvider constructor.

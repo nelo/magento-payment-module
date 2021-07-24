@@ -26,37 +26,37 @@ class CaptureCommand implements CommandInterface
     /**
      * @var BuilderInterface
      */
-    private BuilderInterface $requestBuilder;
+    private $requestBuilder;
 
     /**
      * @var TransferFactoryInterface
      */
-    private TransferFactoryInterface $getPaymentTransferFactory;
+    private $getPaymentTransferFactory;
 
     /**
      * @var TransferFactoryInterface
      */
-    private TransferFactoryInterface $capturePaymentTransferFactory;
+    private $capturePaymentTransferFactory;
 
     /**
      * @var ClientInterface
      */
-    private ClientInterface $client;
+    private $client;
 
     /**
      * @var ValidatorInterface
      */
-    private ValidatorInterface $validator;
+    private $validator;
 
     /**
      * @var ArrayResultFactory
      */
-    private ArrayResultFactory $resultFactory;
+    private $resultFactory;
 
     /**
      * @var HandlerInterface
      */
-    protected HandlerInterface $paymentCapturedHandler;
+    protected $paymentCapturedHandler;
 
     /**
      * Constructor

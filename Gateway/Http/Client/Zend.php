@@ -20,17 +20,17 @@ class Zend implements ClientInterface
     /**
      * @var ZendClientFactory
      */
-    private ZendClientFactory $clientFactory;
+    private $clientFactory;
 
     /**
      * @var ConverterInterface | null
      */
-    private ?ConverterInterface $converter;
+    private $converter;
 
     /**
      * @var Logger
      */
-    private Logger $logger;
+    private $logger;
 
     /**
      * @param ZendClientFactory         $clientFactory

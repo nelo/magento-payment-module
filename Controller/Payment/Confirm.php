@@ -35,57 +35,57 @@ class Confirm implements ActionInterface
     /**
      * @var RequestInterface
      */
-    private RequestInterface $_request;
+    private $_request;
 
     /**
      * @var ResponseInterface
      */
-    private ResponseInterface $_response;
+    private $_response;
 
     /**
      * @var ResultFactory
      */
-    protected ResultFactory $resultFactory;
+    protected $resultFactory;
 
     /**
      * @var MessageManagerInterface
      */
-    protected MessageManagerInterface $messageManager;
+    protected $messageManager;
 
     /**
      * @var LoggerInterface
      */
-    private LoggerInterface $logger;
+    private $logger;
 
     /**
      * @var CommandPoolInterface
      */
-    private CommandPoolInterface $commandPool;
+    private $commandPool;
 
     /**
      * @var Session
      */
-    private Session $checkoutSession;
+    private $checkoutSession;
 
     /**
      * @var OrderRepositoryInterface
      */
-    private OrderRepositoryInterface $orderRepository;
+    private $orderRepository;
 
     /**
      * @var MethodInterface
      */
-    private MethodInterface $method;
+    private $method;
 
     /**
      * @var QuoteFactory
      */
-    private QuoteFactory $quoteFactory;
+    private $quoteFactory;
 
     /**
      * @var ConfigInterface
      */
-    private ConfigInterface $config;
+    private $config;
 
     /**
      * Confirm constructor.

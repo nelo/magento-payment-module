@@ -20,12 +20,12 @@ class CreateCheckoutDataBuilder extends AbstractDataBuilder
     /**
      * @var StoreManagerInterface
      */
-    private StoreManagerInterface $storeManager;
+    private $storeManager;
 
     /**
      * @var UrlInterface
      */
-    private UrlInterface $urlBuilder;
+    private $urlBuilder;
 
     /**
      * CreateCheckoutDataBuilder constructor.
