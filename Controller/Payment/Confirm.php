@@ -151,39 +151,38 @@ class Confirm implements ActionInterface
                     return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_success'));
                 }
             } else {
-                return $this->handleCancel($order);
+                $this->handleCancel($order);
+
+                //restore the cart, because magento default behavior is remove all items from the cart
+                $lastQuoteId = $this->checkoutSession->getLastQuoteId();
+                $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
+                if(!$quote->getId()) {
+                    /** @var Redirect $resultRedirect */
+                    return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
+                }
+                $quote->setIsActive(true)->setReservedOrderId(null)->save();
+                $this->checkoutSession->replaceQuote($quote);
+
+                /** @var Redirect $resultRedirect */
+                return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_fail'));
             }
         } catch (Exception $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
             $this->logger->critical($e->getMessage());
+            $this->handleCancel($order);
             return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
         }
     }
 
     /**
      * @param Order $order
-     * @return Redirect
-     * @throws Exception
      */
-    private function handleCancel(Order $order): Redirect
+    private function handleCancel(Order $order)
     {
-        $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-
-        $order->setState(Order::STATE_CANCELED);
-        $order->setStatus(Order::STATE_CANCELED);
-        $this->orderRepository->save($order);
-
-        //restore the cart, because magento default behavior is remove all items from the cart
-        $lastQuoteId = $this->checkoutSession->getLastQuoteId();
-        $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
-        if(!$quote->getId()) {
-            /** @var Redirect $resultRedirect */
-            return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
+        if($order != null) {
+            $order->setState(Order::STATE_CANCELED);
+            $order->setStatus(Order::STATE_CANCELED);
+            $this->orderRepository->save($order);
         }
-        $quote->setIsActive(true)->setReservedOrderId(null)->save();
-        $this->checkoutSession->replaceQuote($quote);
-
-        /** @var Redirect $resultRedirect */
-        return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_fail'));
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Nelo\Bnpl\Controller\Payment;
 
+use Exception;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Payment\Gateway\ConfigInterface;
@@ -151,7 +152,7 @@ class Start implements ActionInterface
                     return $this->_response->setRedirect($redirectUrl);
                 }
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->paymentFailures->handle((int)$this->checkoutSession->getLastQuoteId(), $e->getMessage());
             $this->logger->critical($e);
 
