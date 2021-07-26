@@ -6,5 +6,11 @@
                 <value id="nelojs-library" type="host">https://js.nelo.co</value>
             </values>
         </policy>
+        <policy id="connect-src">
+            <values>
+                <value id="promotional-messages-sandbox" type="host">https://sandbox.nelo.co</value>
+                <value id="promotional-messages" type="host">https://api.nelo.co</value>
+            </values>
+        </policy>
     </policies>
 </csp_whitelist>
