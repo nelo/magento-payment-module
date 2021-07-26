@@ -11,8 +11,8 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\Response\RedirectInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\Result\Redirect;
-use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\UrlInterface;
 use Magento\Framework\Message\ManagerInterface as MessageManagerInterface;
 use Magento\Payment\Gateway\Command\CommandPoolInterface;
 use Magento\Payment\Gateway\Data\PaymentDataObjectFactory;
@@ -41,11 +41,6 @@ class Confirm implements ActionInterface
      * @var ResponseInterface
      */
     private $_response;
-
-    /**
-     * @var ResultFactory
-     */
-    protected $resultFactory;
 
     /**
      * @var MessageManagerInterface
@@ -88,6 +83,11 @@ class Confirm implements ActionInterface
     private $config;
 
     /**
+     * @var UrlInterface
+     */
+    private $urlInterface;
+
+    /**
      * Confirm constructor.
      *
      * @param Context $context
@@ -98,6 +98,7 @@ class Confirm implements ActionInterface
      * @param QuoteFactory $quoteFactory
      * @param LoggerInterface $logger
      * @param ConfigInterface $config
+     * @param UrlInterface $urlInterface
      */
     public function __construct(
         Context $context,
@@ -107,12 +108,12 @@ class Confirm implements ActionInterface
         CommandPoolInterface $commandPool,
         QuoteFactory $quoteFactory,
         LoggerInterface $logger,
-        ConfigInterface $config
+        ConfigInterface $config,
+        UrlInterface $urlInterface
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
         $this->messageManager           = $context->getMessageManager();
-        $this->resultFactory            = $context->getResultFactory();
         $this->commandPool              = $commandPool;
         $this->checkoutSession          = $checkoutSession;
         $this->orderRepository          = $orderRepository;
@@ -120,6 +121,7 @@ class Confirm implements ActionInterface
         $this->quoteFactory             = $quoteFactory;
         $this->logger                   = $logger;
         $this->config                   = $config;
+        $this->urlInterface             = $urlInterface;
     }
 
     /**
@@ -127,9 +129,6 @@ class Confirm implements ActionInterface
      */
     public function execute()
     {
-        /** @var Redirect $resultRedirect */
-        $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-
         try {
             $response = $this->_request->getParams();
             $orderId = $response[self::RESPONSE_REFERENCE];
@@ -148,7 +147,7 @@ class Confirm implements ActionInterface
                             ]
                         );
                     }
-                    return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_success'));
+                    $this->setRedirect('redirect_on_nelo_success');
                 }
             } else {
                 $this->handleCancel($order);
@@ -157,21 +156,25 @@ class Confirm implements ActionInterface
                 $lastQuoteId = $this->checkoutSession->getLastQuoteId();
                 $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
                 if(!$quote->getId()) {
-                    /** @var Redirect $resultRedirect */
-                    return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
+                    $this->setRedirect('redirect_on_unexpected_error');
+                } else {
+                    $quote->setIsActive(true)->setReservedOrderId(null)->save();
+                    $this->checkoutSession->replaceQuote($quote);
+                    $this->setRedirect('redirect_on_nelo_fail');
                 }
-                $quote->setIsActive(true)->setReservedOrderId(null)->save();
-                $this->checkoutSession->replaceQuote($quote);
-
-                /** @var Redirect $resultRedirect */
-                return $resultRedirect->setPath($this->config->getValue('redirect_on_nelo_fail'));
             }
         } catch (Exception $e) {
             $this->messageManager->addErrorMessage($e->getMessage());
             $this->logger->critical($e->getMessage());
-            $this->handleCancel($order);
-            return $resultRedirect->setPath($this->config->getValue('redirect_on_unexpected_error'));
+            if(isset($order)) {
+                $this->handleCancel($order);
+                $this->setRedirect('redirect_on_unexpected_error');
+            }
         }
+    }
+
+    private function setRedirect(string $configValue) {
+        $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
     }
 
     /**
@@ -179,10 +182,8 @@ class Confirm implements ActionInterface
      */
     private function handleCancel(Order $order)
     {
-        if($order != null) {
-            $order->setState(Order::STATE_CANCELED);
-            $order->setStatus(Order::STATE_CANCELED);
-            $this->orderRepository->save($order);
-        }
+        $order->setState(Order::STATE_CANCELED);
+        $order->setStatus(Order::STATE_CANCELED);
+        $this->orderRepository->save($order);
     }
 }

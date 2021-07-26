@@ -72,11 +72,6 @@ class Start implements ActionInterface
     private $checkoutSession;
 
     /**
-     * @var ResultFactory
-     */
-    protected $resultFactory;
-
-    /**
      * @var PaymentFailuresInterface
      */
     private $paymentFailures;
@@ -117,7 +112,6 @@ class Start implements ActionInterface
         $this->_response                = $context->getResponse();
         $this->_objectManager           = $context->getObjectManager();
         $this->messageManager           = $context->getMessageManager();
-        $this->resultFactory            = $context->getResultFactory();
         $this->commandPool              = $commandPool;
         $this->logger                   = $logger;
         $this->paymentDataObjectFactory = $paymentDataObjectFactory;
@@ -149,17 +143,18 @@ class Start implements ActionInterface
 
                 $redirectUrl = TransactionReader::readRedirectUrl($commandResult->get());
                 if ($redirectUrl) {
-                    return $this->_response->setRedirect($redirectUrl);
+                    $this->_response->setRedirect($redirectUrl);
                 }
             }
         } catch (Exception $e) {
             $this->paymentFailures->handle((int)$this->checkoutSession->getLastQuoteId(), $e->getMessage());
             $this->logger->critical($e);
-
             $this->messageManager->addErrorMessage(__('Sorry, but something went wrong.'));
-            /** @var Redirect $resultRedirect */
-            $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
-            return $resultRedirect->setPath($this->config->getValue("redirect_on_nelo_fail"));
+            $this->setRedirect('redirect_on_nelo_fail');
         }
+    }
+
+    private function setRedirect(string $configValue) {
+        $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
     }
 }

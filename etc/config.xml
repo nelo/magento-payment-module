@@ -12,7 +12,7 @@
                 <specificcurrency>MXN</specificcurrency>
                 <title>Nelo</title>
                 <redirect_on_nelo_success>checkout/onepage/success</redirect_on_nelo_success>
-                <redirect_on_nelo_fail>checkout/cart</redirect_on_nelo_fail>
+                <redirect_on_nelo_fail>checkout/#payment</redirect_on_nelo_fail>
                 <redirect_on_unexpected_error>checkout/onepage/failure</redirect_on_unexpected_error>
                 <merchant_name>Nelo Partner</merchant_name>
                 <payment_action>authorize_capture</payment_action>
