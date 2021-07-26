@@ -80,15 +80,17 @@
     <virtualType name="NeloValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
         <arguments>
             <argument name="validators" xsi:type="array">
-                <item name="country" xsi:type="string">NeloCountryValidator</item>
+                <item name="currency" xsi:type="string">NeloCurrencyValidator</item>
             </argument>
         </arguments>
     </virtualType>
-    <virtualType name="NeloCountryValidator" type="Magento\Payment\Gateway\Validator\CountryValidator">
+
+    <virtualType name="NeloCurrencyValidator" type="Nelo\Bnpl\Gateway\Validator\CurrencyValidator">
         <arguments>
             <argument name="config" xsi:type="object">NeloConfig</argument>
         </arguments>
     </virtualType>
+
     <virtualType name="NeloZendHttpClient" type="Nelo\Bnpl\Gateway\Http\Client\Zend">
         <arguments>
             <argument name="logger" xsi:type="object">NeloLogger</argument>
