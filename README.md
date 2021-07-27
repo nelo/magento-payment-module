@@ -28,4 +28,9 @@ Therefore you need to add our repository (code below) to your composer.json in t
   }
 ```
 after that you might need to save your GitHub auth credentials for composer.  
-Next step is add the module to your project in the following way: `composer require nelo/magento-payment-module`.
+Next step is add the module to your project in the following way:
+ - `composer require nelo/magento-payment-module`
+ - `php bin/magento setup:upgrade`
+ - `php bin/magento setup:di:compile`
+ - Finally, you might need `chmod -R 777 var/ generated/`
+
