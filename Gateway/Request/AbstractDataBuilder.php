@@ -26,6 +26,11 @@ abstract class AbstractDataBuilder implements BuilderInterface
     const ORDER = 'order';
 
     /**
+     * Customer object
+     */
+    const CUSTOMER = 'customer';
+
+    /**
      * Merchant Ref
      */
     const REFERENCE = 'reference';

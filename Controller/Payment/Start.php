@@ -136,8 +136,9 @@ class Start implements ActionInterface
                 $paymentDataObject = $this->paymentDataObjectFactory->create($payment);
                 $commandResult     = $this->commandPool->get('create_checkout')->execute(
                     [
-                        'payment' => $paymentDataObject,
-                        'amount'  => $order->getTotalDue(),
+                        'payment'  => $paymentDataObject,
+                        'amount'   => $order->getTotalDue(),
+                        'customer' => $this->getCustomerData($order)
                     ]
                 );
 
@@ -156,5 +157,35 @@ class Start implements ActionInterface
 
     private function setRedirect(string $configValue) {
         $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
+    }
+
+    private function getCustomerData(Order $order) {
+        $phoneNumber = $order->getShippingAddress()->getTelephone();
+        $phoneCountry = 'MX';
+        if(strpos($phoneNumber, '+52') === 0){
+            $phoneNumber = substr($phoneNumber, 3);
+            $phoneCountry = 'MX';
+        } else if(strpos($phoneNumber, '+1') === 0){
+            $phoneNumber = substr($phoneNumber, 2);
+            $phoneCountry = 'US';
+        }
+        return [
+            'firstName'        => $order->getCustomerFirstname(),
+            'paternalLastName' => $order->getCustomerLastname(),
+            'email'            => $order->getCustomerEmail(),
+            'phoneNumber'      => [
+                'number'      => $phoneNumber,
+                'countryIso2' => $phoneCountry
+            ],
+            'address'          => [
+                'countryIso2' => 'MX',
+                'addressMX'   => [
+                    'street'     => $order->getShippingAddress()->getStreet()[0],
+                    'city'       => $order->getShippingAddress()->getCity(),
+                    'postalCode' => $order->getShippingAddress()->getPostcode(),
+                    'state'      => $order->getBillingAddress()->getRegion()
+                ]
+            ]
+        ];
     }
 }

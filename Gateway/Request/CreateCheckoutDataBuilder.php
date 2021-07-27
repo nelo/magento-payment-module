@@ -52,15 +52,16 @@ class CreateCheckoutDataBuilder extends AbstractDataBuilder
         $payment = $paymentDO->getPayment();
         $order   = $payment->getOrder();
         return [
-            self::ORDER => [
-                self::REFERENCE => $order->getId(),
+            self::ORDER                => [
+                self::REFERENCE    => $order->getId(),
                 self::TOTAL_AMOUNT => [
-                    self::AMOUNT => ((float)SubjectReader::readAmount($buildSubject)) * 100,
+                    self::AMOUNT        => ((float)SubjectReader::readAmount($buildSubject)) * 100,
                     self::CURRENCY_CODE => 'MXN'
                 ]
             ],
+            self::CUSTOMER             => $buildSubject[self::CUSTOMER],
             self::REDIRECT_CONFIRM_URL => $this->urlBuilder->getUrl('nelo/payment/confirm'),
-            self::REDIRECT_CANCEL_URL => $this->urlBuilder->getUrl('nelo/payment/confirm')
+            self::REDIRECT_CANCEL_URL  => $this->urlBuilder->getUrl('nelo/payment/confirm')
         ];
     }
 }
