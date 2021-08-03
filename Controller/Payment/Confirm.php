@@ -147,7 +147,7 @@ class Confirm implements ActionInterface
                             ]
                         );
                     }
-                    $this->setRedirect('redirect_on_nelo_success');
+                    return $this->setRedirect('redirect_on_nelo_success');
                 }
             } else {
                 $this->handleCancel($order);
@@ -156,11 +156,11 @@ class Confirm implements ActionInterface
                 $lastQuoteId = $this->checkoutSession->getLastQuoteId();
                 $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
                 if(!$quote->getId()) {
-                    $this->setRedirect('redirect_on_unexpected_error');
+                    return $this->setRedirect('redirect_on_unexpected_error');
                 } else {
                     $quote->setIsActive(true)->setReservedOrderId(null)->save();
                     $this->checkoutSession->replaceQuote($quote);
-                    $this->setRedirect('redirect_on_nelo_fail');
+                    return $this->setRedirect('redirect_on_nelo_fail');
                 }
             }
         } catch (Exception $e) {
@@ -168,13 +168,13 @@ class Confirm implements ActionInterface
             $this->logger->critical($e->getMessage());
             if(isset($order)) {
                 $this->handleCancel($order);
-                $this->setRedirect('redirect_on_unexpected_error');
+                return $this->setRedirect('redirect_on_unexpected_error');
             }
         }
     }
 
     private function setRedirect(string $configValue) {
-        $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
+        return $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
     }
 
     /**

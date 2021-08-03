@@ -11,6 +11,7 @@
                 <order_status>pending_payment</order_status>
                 <specificcurrency>MXN</specificcurrency>
                 <title>Nelo</title>
+                <locale_option>store_locale</locale_option>
                 <redirect_on_nelo_success>checkout/onepage/success</redirect_on_nelo_success>
                 <redirect_on_nelo_fail>checkout/#payment</redirect_on_nelo_fail>
                 <redirect_on_unexpected_error>checkout/onepage/failure</redirect_on_unexpected_error>

@@ -144,19 +144,19 @@ class Start implements ActionInterface
 
                 $redirectUrl = TransactionReader::readRedirectUrl($commandResult->get());
                 if ($redirectUrl) {
-                    $this->_response->setRedirect($redirectUrl);
+                    return $this->_response->setRedirect($redirectUrl);
                 }
             }
         } catch (Exception $e) {
             $this->paymentFailures->handle((int)$this->checkoutSession->getLastQuoteId(), $e->getMessage());
             $this->logger->critical($e);
             $this->messageManager->addErrorMessage(__('Sorry, but something went wrong.'));
-            $this->setRedirect('redirect_on_nelo_fail');
+            return $this->setRedirect('redirect_on_nelo_fail');
         }
     }
 
     private function setRedirect(string $configValue) {
-        $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
+        return $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
     }
 
     private function getCustomerData(Order $order) {

@@ -31,14 +31,9 @@
                 <field id="redirect_on_unexpected_error" translate="label" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Where to redirect when an unexpected error occurs</label>
                 </field>
-                <field id="allowspecific" translate="label" type="allowspecific" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Payment from Applicable Countries</label>
-                    <source_model>Magento\Payment\Model\Config\Source\Allspecificcountries</source_model>
-                </field>
-                <field id="specificcountry" translate="label" type="multiselect" sortOrder="90" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
-                    <label>Payment from Specific Countries</label>
-                    <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
-                    <can_be_empty>1</can_be_empty>
+                <field id="locale_option" translate="label" type="select" sortOrder="61" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Promotional message locale</label>
+                    <source_model>Nelo\Bnpl\Model\LocaleOption</source_model>
                 </field>
                 <field id="sort_order" translate="label" type="text" sortOrder="150" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Sort Order</label>

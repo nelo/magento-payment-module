@@ -59,12 +59,23 @@ class NeloConfigProvider implements ConfigProviderInterface
      */
     public function getConfig(): array
     {
+        $localeOption = $this->config->getValue('locale_option');
+        $locale = null;
+        if($localeOption == LocaleOption::STORE_LOCALE) {
+            $locale = str_replace('_', '-', $this->localeResolver->getLocale());
+        }
+        else if($localeOption != LocaleOption::BROWSER_LOCALE) {
+            $locale = $localeOption;
+        }
+
+
         return [
             'payment' => [
                 'bnpl' => [
                     'redirectUrl'       => $this->urlBuilder->getUrl('nelo/payment/start'),
                     'publishableApiKey' => $this->config->getValue('publishable_api_key'),
-                    'isSandboxMode'     => (bool)$this->config->getValue('sandbox_flag')
+                    'isSandboxMode'     => (bool)$this->config->getValue('sandbox_flag'),
+                    'locale'            => $locale
                 ]
             ]
         ];
