@@ -109,7 +109,7 @@ class PaymentCapturedHandler implements HandlerInterface
         if($this->getTransaction($orderId, $paymentId) == NULL) { // Making our module idempotent too
             $this->updateOrderStatus($order, $paymentId);
             $this->addTransactionToOrder($order, $handlingSubject['paymentUuid']);
-
+            $this->addPurchaseInvoiceToOrder($order, $handlingSubject['paymentUuid']);
         }
 
     }
@@ -152,7 +152,7 @@ class PaymentCapturedHandler implements HandlerInterface
 
                 $order->addCommentToStatusHistory('Automatically INVOICED', FALSE);
                 $transaction = $this->transactionFactory->create()->addObject($invoice)->addObject($invoice->getOrder());
-                $this->transactionsRepository->save($transaction);
+                $transaction->save();
             }
         }
     }
