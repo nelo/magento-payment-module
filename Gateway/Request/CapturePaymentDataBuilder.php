@@ -2,8 +2,6 @@
 
 namespace Nelo\Bnpl\Gateway\Request;
 
-use Magento\Payment\Gateway\Request\BuilderInterface;
-
 /**
  * Class CreateCheckoutDataBuilder
  *

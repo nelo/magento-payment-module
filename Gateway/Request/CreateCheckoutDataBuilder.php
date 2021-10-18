@@ -2,13 +2,9 @@
 
 namespace Nelo\Bnpl\Gateway\Request;
 
-use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\UrlInterface;
-use Magento\Payment\Gateway\Request\BuilderInterface;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Sales\Model\Order\Payment;
-use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Class CreateCheckoutDataBuilder
@@ -18,11 +14,6 @@ use Magento\Store\Model\StoreManagerInterface;
 class CreateCheckoutDataBuilder extends AbstractDataBuilder
 {
     /**
-     * @var StoreManagerInterface
-     */
-    private $storeManager;
-
-    /**
      * @var UrlInterface
      */
     private $urlBuilder;
@@ -30,14 +21,11 @@ class CreateCheckoutDataBuilder extends AbstractDataBuilder
     /**
      * CreateCheckoutDataBuilder constructor.
      *
-     * @param StoreManagerInterface $storeManager
      * @param UrlInterface $urlBuilder
      */
     public function __construct(
-        StoreManagerInterface $storeManager,
         UrlInterface $urlBuilder
     ) {
-        $this->storeManager = $storeManager;
         $this->urlBuilder   = $urlBuilder;
     }
 
@@ -53,15 +41,16 @@ class CreateCheckoutDataBuilder extends AbstractDataBuilder
         $order   = $payment->getOrder();
         return [
             self::ORDER                => [
-                self::REFERENCE    => $order->getId(),
+                self::REFERENCE    => $order->getIncrementId(),
                 self::TOTAL_AMOUNT => [
                     self::AMOUNT        => ((float)SubjectReader::readAmount($buildSubject)) * 100,
                     self::CURRENCY_CODE => 'MXN'
                 ]
             ],
             self::CUSTOMER             => $buildSubject[self::CUSTOMER],
-            self::REDIRECT_CONFIRM_URL => $this->urlBuilder->getUrl('nelo/payment/confirm'),
-            self::REDIRECT_CANCEL_URL  => $this->urlBuilder->getUrl('nelo/payment/confirm')
+            self::REDIRECT_CONFIRM_URL => rtrim($this->urlBuilder->getUrl('nelo/payment/confirm'), '/'),
+            self::REDIRECT_CANCEL_URL  => rtrim($this->urlBuilder->getUrl('nelo/payment/confirm'), '/') .
+                '?' . self::REFERENCE . '=' . $order->getIncrementId()
         ];
     }
 }

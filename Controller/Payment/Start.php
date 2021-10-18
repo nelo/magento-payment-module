@@ -3,8 +3,6 @@
 namespace Nelo\Bnpl\Controller\Payment;
 
 use Exception;
-use Magento\Framework\Controller\Result\Redirect;
-use Magento\Framework\Controller\ResultFactory;
 use Magento\Payment\Gateway\ConfigInterface;
 use Nelo\Bnpl\Gateway\Helper\TransactionReader;
 use Magento\Checkout\Model\Session;
@@ -85,6 +83,7 @@ class Start implements ActionInterface
      * @var ConfigInterface
      */
     private $config;
+
 
     /**
      * Start constructor.

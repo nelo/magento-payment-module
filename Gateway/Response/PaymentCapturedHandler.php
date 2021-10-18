@@ -4,6 +4,9 @@ namespace Nelo\Bnpl\Gateway\Response;
 
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\Data\OrderInterfaceFactory;
+use Magento\Sales\Api\Data\TransactionInterface;
 use Magento\Sales\Api\Data\TransactionSearchResultInterfaceFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Api\TransactionRepositoryInterface;
@@ -14,6 +17,7 @@ use Magento\Sales\Model\Order\Invoice;
 use Magento\Sales\Model\Order\Payment;
 use Magento\Payment\Gateway\Response\HandlerInterface;
 use Magento\Sales\Model\Service\InvoiceService;
+use Magento\Sales\Model\Spi\OrderResourceInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -65,6 +69,16 @@ class PaymentCapturedHandler implements HandlerInterface
     private $invoiceRepository;
 
     /**
+     * @var OrderResourceInterface
+     */
+    private $orderResource;
+
+    /**
+     * @var OrderInterfaceFactory
+     */
+    private $orderFactory;
+
+    /**
      * PaymentCapturedHandler constructor.
      *
      * @param LoggerInterface $logger
@@ -75,6 +89,8 @@ class PaymentCapturedHandler implements HandlerInterface
      * @param TransactionRepositoryInterface $transactionsRepository
      * @param OrderPaymentRepositoryInterface $paymentsRepository
      * @param InvoiceRepositoryInterface $invoiceRepository
+     * @param OrderResourceInterface $orderResource
+     * @param OrderInterfaceFactory $orderFactory
      */
     public function __construct(
         LoggerInterface $logger,
@@ -84,7 +100,9 @@ class PaymentCapturedHandler implements HandlerInterface
         TransactionSearchResultInterfaceFactory $transactionSearchResultFactory,
         TransactionRepositoryInterface $transactionsRepository,
         OrderPaymentRepositoryInterface $paymentsRepository,
-        InvoiceRepositoryInterface $invoiceRepository
+        InvoiceRepositoryInterface $invoiceRepository,
+        OrderResourceInterface $orderResource,
+        OrderInterfaceFactory $orderFactory
     ) {
         $this->logger                         = $logger;
         $this->ordersRepository               = $ordersRepository;
@@ -94,6 +112,8 @@ class PaymentCapturedHandler implements HandlerInterface
         $this->transactionsRepository         = $transactionsRepository;
         $this->paymentsRepository             = $paymentsRepository;
         $this->invoiceRepository              = $invoiceRepository;
+        $this->orderResource                  = $orderResource;
+        $this->orderFactory                   = $orderFactory;
     }
 
     /**
@@ -103,38 +123,55 @@ class PaymentCapturedHandler implements HandlerInterface
     public function handle(array $handlingSubject, array $response)
     {
         $paymentId = $handlingSubject['paymentUuid'];
-        $orderId = $handlingSubject['reference'];
-        $order = $this->ordersRepository->get($orderId);
+        $incrementalId = $handlingSubject['reference'];
+        $order = $this->orderFactory->create();
+        $this->orderResource->load($order, $incrementalId, OrderInterface::INCREMENT_ID);
 
-        if($this->getTransaction($orderId, $paymentId) == NULL) { // Making our module idempotent too
-            $this->updateOrderStatus($order, $paymentId);
-            $this->addTransactionToOrder($order, $handlingSubject['paymentUuid']);
-            $this->addPurchaseInvoiceToOrder($order, $handlingSubject['paymentUuid']);
+        if($this->getTransaction($order->getId(), $paymentId) == NULL) { // Making our module idempotent too
+            try {
+                $this->updateOrderStatus($order, $paymentId);
+                $this->addTransactionToOrder($order, $handlingSubject['paymentUuid']);
+                $this->addPurchaseInvoiceToOrder($order, $handlingSubject['paymentUuid']);
+            } catch (\Exception $e) {
+                $comment = 'An exception occurred and the order has no transaction or invoice attached. But you can proceed ' .
+                    ' with next steps since the payment ' . $paymentId . ' was successful in Nelo\'s side.';
+                $order->addCommentToStatusHistory($comment, FALSE);
+                $this->ordersRepository->save($order);
+                $this->logger->critical('Next logs are only for research purpose.');
+                $this->logger->critical($e);
+            }
         }
-
     }
 
     private function updateOrderStatus(Order $order, $paymentId) {
         $order->setState(Order::STATE_PROCESSING);
         $order->setStatus(Order::STATE_PROCESSING);
-        $comment = __('Order #%1 in processing state. Transaction id #%2 was successful.', $order->getId(), $paymentId);
+        $comment = 'Order ' . $order->getIncrementId() . ' was moved to \'processing\' state by Nelo. Transaction ' .
+            $paymentId . ' was successful.';
         $order->addStatusToHistory(Order::STATE_PROCESSING, $comment,FALSE);
         $this->ordersRepository->save($order);
-        $this->logger->info(__FUNCTION__ . ': Order with id ' . $order->getId() . ' was paid and status was set to processing.' );
+        $this->logger->info(__FUNCTION__ . ': ' . $comment);
     }
 
+    /**
+     * @param Order $order
+     * @param $paymentId
+     * @throws \Exception
+     */
     private function addTransactionToOrder(Order $order, $paymentId): void {
         $payment = $order->getPayment();
         $payment->setTransactionId($paymentId);
         $payment->setLastTransId($paymentId);
         $transaction = $payment->addTransaction(Payment\Transaction::TYPE_CAPTURE, null, TRUE);
         $order->setExtOrderId($paymentId);
+        $comment = 'Transaction id ' . $paymentId . ' was added to the order ' . $order->getIncrementId() . ' by Nelo.';
+        $order->addCommentToStatusHistory($comment, FALSE);
 
         $this->paymentsRepository->save($payment);
         $this->transactionsRepository->save($transaction);
         $this->ordersRepository->save($order);
 
-        $this->logger->info(__FUNCTION__ . ': Transaction ' . $paymentId . ' added to the order ' . $order->getId());
+        $this->logger->info(__FUNCTION__ . ': ' . $comment);
     }
 
     /**
@@ -148,12 +185,24 @@ class PaymentCapturedHandler implements HandlerInterface
                 $invoice->register();
                 $invoice->getOrder()->setCustomerNoteNotify(FALSE);
                 $invoice->setTransactionId($paymentId);
-                $this->invoiceRepository->save($invoice);
 
-                $order->addCommentToStatusHistory('Automatically INVOICED', FALSE);
-                $transaction = $this->transactionFactory->create()->addObject($invoice)->addObject($invoice->getOrder());
-                $transaction->save();
+                $comment = 'Invoice ' . $invoice->getIncrementId() . ' was added to the order ' . $order->getIncrementId() .
+                    ' by Nelo.';
+                $order->addCommentToStatusHistory($comment, FALSE);
+                try {
+                    $transaction = $this->transactionFactory->create()->addObject($invoice)->addObject($invoice->getOrder());
+                    $transaction->save();
+                } catch (\Exception $e) {
+                    $this->logger->warning($e);
+                }
+
+                $this->invoiceRepository->save($invoice);
+                $this->ordersRepository->save($order);
+                $this->logger->info($comment);
             }
+        } else {
+            $this->logger->warning(__FUNCTION__ . ': Order ' . $order->getIncrementId() .
+                ' can\'t be invoiced by Nelo, order state is ' . $order->getState() . '. Related transaction is ' . $paymentId);
         }
     }
 

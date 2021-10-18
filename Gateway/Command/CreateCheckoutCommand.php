@@ -2,6 +2,7 @@
 
 namespace Nelo\Bnpl\Gateway\Command;
 
+use Magento\Framework\Exception\LocalizedException;
 use Nelo\Bnpl\Gateway\Validator\AbstractResponseValidator;
 use Magento\Payment\Gateway\Command\Result\ArrayResult;
 use Magento\Payment\Gateway\CommandInterface;
