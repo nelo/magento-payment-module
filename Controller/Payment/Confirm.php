@@ -8,20 +8,21 @@ use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\ActionInterface;
 use Magento\Payment\Gateway\ConfigInterface;
 use Magento\Framework\App\RequestInterface;
-use Magento\Framework\App\Response\RedirectInterface;
 use Magento\Framework\App\ResponseInterface;
-use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\UrlInterface;
 use Magento\Framework\Message\ManagerInterface as MessageManagerInterface;
 use Magento\Payment\Gateway\Command\CommandPoolInterface;
-use Magento\Payment\Gateway\Data\PaymentDataObjectFactory;
 use Magento\Payment\Gateway\Helper\ContextHelper;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Payment\Model\MethodInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Spi\OrderResourceInterface;
 use Psr\Log\LoggerInterface;
+
 
 /**
  * Class Confirm
@@ -88,6 +89,16 @@ class Confirm implements ActionInterface
     private $urlInterface;
 
     /**
+     * @var OrderResourceInterface
+     */
+    private $orderResource;
+
+    /**
+     * @var OrderInterfaceFactory
+     */
+    private $orderFactory;
+
+    /**
      * Confirm constructor.
      *
      * @param Context $context
@@ -109,7 +120,9 @@ class Confirm implements ActionInterface
         QuoteFactory $quoteFactory,
         LoggerInterface $logger,
         ConfigInterface $config,
-        UrlInterface $urlInterface
+        UrlInterface $urlInterface,
+        OrderResourceInterface $orderResource,
+        OrderInterfaceFactory $orderFactory
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -122,6 +135,8 @@ class Confirm implements ActionInterface
         $this->logger                   = $logger;
         $this->config                   = $config;
         $this->urlInterface             = $urlInterface;
+        $this->orderResource            = $orderResource;
+        $this->orderFactory             = $orderFactory;
     }
 
     /**
@@ -131,39 +146,44 @@ class Confirm implements ActionInterface
     {
         try {
             $response = $this->_request->getParams();
-            $orderId = $response[self::RESPONSE_REFERENCE];
-            /** @var Order $order */
-            $order = $this->orderRepository->get($orderId);
+            $incrementalId = $response[self::RESPONSE_REFERENCE];
 
-            if($orderId && isset($response[self::RESPONSE_PAYMENT_UUID])){ //payment was authorized
-                $payment = $order->getPayment();
-                ContextHelper::assertOrderPayment($payment);
-                if ($payment->getMethod() === $this->method->getCode()) {
-                    if ($order->getState() == Order::STATE_PENDING_PAYMENT) {
-                        $this->commandPool->get('capture')->execute(
-                            [
-                                'reference' => $orderId,
-                                'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
-                            ]
-                        );
+            $order = $this->orderFactory->create();
+            $this->orderResource->load($order, $incrementalId, OrderInterface::INCREMENT_ID);
+
+            if($order->getState() == Order::STATE_PENDING_PAYMENT) {
+                if ($incrementalId && $order && isset($response[self::RESPONSE_PAYMENT_UUID])) { //payment was authorized
+                    $payment = $order->getPayment();
+                    ContextHelper::assertOrderPayment($payment);
+                    if ($payment->getMethod() === $this->method->getCode()) {
+                        if ($order->getState() == Order::STATE_PENDING_PAYMENT) {
+                            $this->commandPool->get('capture')->execute(
+                                [
+                                    'reference' => $incrementalId,
+                                    'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
+                                ]
+                            );
+                        }
+                        return $this->setRedirect('redirect_on_nelo_success');
                     }
-                    return $this->setRedirect('redirect_on_nelo_success');
-                }
-            } else {
-                $this->handleCancel($order);
-
-                //restore the cart, because magento default behavior is remove all items from the cart
-                $lastQuoteId = $this->checkoutSession->getLastQuoteId();
-                $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
-                if(!$quote->getId()) {
-                    return $this->setRedirect('redirect_on_unexpected_error');
                 } else {
-                    $quote->setIsActive(true)->setReservedOrderId(null)->save();
-                    $this->checkoutSession->replaceQuote($quote);
-                    return $this->setRedirect('redirect_on_nelo_fail');
+                    $this->handleCancel($order);
+                    //restore the cart, because magento default behavior is remove all items from the cart
+                    $lastQuoteId = $this->checkoutSession->getLastQuoteId();
+                    $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
+                    if (!$quote->getId()) {
+                        return $this->setRedirect('redirect_on_unexpected_error');
+                    } else {
+                        $quote->setIsActive(true)->setReservedOrderId(null)->save();
+                        $this->checkoutSession->replaceQuote($quote);
+                        return $this->setRedirect('redirect_on_nelo_fail');
+                    }
                 }
             }
         } catch (Exception $e) {
+            $this->logger->critical("An error occurred when receive the redirect from Nelo.");
+            $this->logger->critical($e->getMessage());
+            $this->logger->critical($e->getTraceAsString());
             $this->messageManager->addErrorMessage($e->getMessage());
             $this->logger->critical($e->getMessage());
             if(isset($order)) {

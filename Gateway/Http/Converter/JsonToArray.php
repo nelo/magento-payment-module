@@ -2,6 +2,7 @@
 
 namespace Nelo\Bnpl\Gateway\Http\Converter;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
 use Magento\Payment\Gateway\Http\ConverterException;
 use Magento\Payment\Gateway\Http\ConverterInterface;

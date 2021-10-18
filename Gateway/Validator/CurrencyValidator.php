@@ -66,7 +66,7 @@ class CurrencyValidator extends AbstractResponseValidator
                 $validationSubject['currency'], $availableCurrencies)];
             $this->logger->info('The ' . $validationSubject['currency'] . ' currency is not supported by Nelo payment.');
         }
-        
+
         return $this->createResult($validationResult, $errorMessages);
     }
 }
