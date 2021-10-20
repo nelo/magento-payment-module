@@ -17,6 +17,7 @@ use Magento\Framework\Message\ManagerInterface as MessageManagerInterface;
 use Magento\Payment\Gateway\Command\CommandPoolInterface;
 use Magento\Payment\Gateway\Helper\ContextHelper;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Sales\Api\OrderManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Payment\Model\MethodInterface;
 use Magento\Sales\Model\Order;
@@ -94,6 +95,11 @@ class Confirm implements ActionInterface
     private $resource;
 
     /**
+     * @var OrderManagementInterface
+     */
+    private $orderManager;
+
+    /**
      * Confirm constructor.
      *
      * @param Context $context
@@ -105,6 +111,8 @@ class Confirm implements ActionInterface
      * @param LoggerInterface $logger
      * @param ConfigInterface $config
      * @param UrlInterface $urlInterface
+     * @param OrderResource $resource
+     * @param OrderManagementInterface $orderManager
      */
     public function __construct(
         Context $context,
@@ -116,7 +124,8 @@ class Confirm implements ActionInterface
         LoggerInterface $logger,
         ConfigInterface $config,
         UrlInterface $urlInterface,
-        OrderResource $resource
+        OrderResource $resource,
+        OrderManagementInterface $orderManager
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -130,6 +139,7 @@ class Confirm implements ActionInterface
         $this->config                   = $config;
         $this->urlInterface             = $urlInterface;
         $this->resource                 = $resource;
+        $this->orderManager             = $orderManager;
     }
 
     /**
@@ -153,19 +163,17 @@ class Confirm implements ActionInterface
                     $payment = $order->getPayment();
                     ContextHelper::assertOrderPayment($payment);
                     if ($payment->getMethod() === $this->method->getCode()) {
-                        if ($order->getState() == Order::STATE_PENDING_PAYMENT) {
-                            $this->commandPool->get('capture')->execute(
-                                [
-                                    'magentoOrderId' => $order->getId(),
-                                    'reference'   => $incrementalId,
-                                    'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
-                                ]
-                            );
-                        }
+                        $this->commandPool->get('capture')->execute(
+                            [
+                                'magentoOrderId' => $order->getId(),
+                                'reference'   => $incrementalId,
+                                'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
+                            ]
+                        );
                         return $this->setRedirect('redirect_on_nelo_success');
                     }
                 } else {
-                    $this->handleCancel($order);
+                    $this->orderManager->cancel($order->getId());
                     //restore the cart, because magento default behavior is remove all items from the cart
                     $lastQuoteId = $this->checkoutSession->getLastQuoteId();
                     $quote = $this->quoteFactory->create()->loadByIdWithoutStore($lastQuoteId);
@@ -185,7 +193,7 @@ class Confirm implements ActionInterface
             $this->messageManager->addErrorMessage($e->getMessage());
             $this->logger->critical($e->getMessage());
             if(isset($order)) {
-                $this->handleCancel($order);
+                $this->orderManager->cancel($order->getId());
                 return $this->setRedirect('redirect_on_unexpected_error');
             }
         }
@@ -221,15 +229,5 @@ class Confirm implements ActionInterface
         }
 
         return $result;
-    }
-
-    /**
-     * @param Order $order
-     */
-    private function handleCancel(Order $order)
-    {
-        $order->setState(Order::STATE_CANCELED);
-        $order->setStatus(Order::STATE_CANCELED);
-        $this->orderRepository->save($order);
     }
 }
