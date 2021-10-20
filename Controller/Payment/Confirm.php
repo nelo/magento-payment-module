@@ -6,6 +6,8 @@ use Exception;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\ActionInterface;
+use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Framework\DB\Select;
 use Magento\Payment\Gateway\ConfigInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\App\ResponseInterface;
@@ -15,13 +17,11 @@ use Magento\Framework\Message\ManagerInterface as MessageManagerInterface;
 use Magento\Payment\Gateway\Command\CommandPoolInterface;
 use Magento\Payment\Gateway\Helper\ContextHelper;
 use Magento\Quote\Model\QuoteFactory;
-use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Payment\Model\MethodInterface;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Spi\OrderResourceInterface;
 use Psr\Log\LoggerInterface;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 
 
 /**
@@ -89,14 +89,9 @@ class Confirm implements ActionInterface
     private $urlInterface;
 
     /**
-     * @var OrderResourceInterface
+     * @var OrderResource
      */
-    private $orderResource;
-
-    /**
-     * @var OrderInterfaceFactory
-     */
-    private $orderFactory;
+    private $resource;
 
     /**
      * Confirm constructor.
@@ -121,8 +116,7 @@ class Confirm implements ActionInterface
         LoggerInterface $logger,
         ConfigInterface $config,
         UrlInterface $urlInterface,
-        OrderResourceInterface $orderResource,
-        OrderInterfaceFactory $orderFactory
+        OrderResource $resource
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -135,8 +129,7 @@ class Confirm implements ActionInterface
         $this->logger                   = $logger;
         $this->config                   = $config;
         $this->urlInterface             = $urlInterface;
-        $this->orderResource            = $orderResource;
-        $this->orderFactory             = $orderFactory;
+        $this->resource                 = $resource;
     }
 
     /**
@@ -147,19 +140,24 @@ class Confirm implements ActionInterface
         try {
             $response = $this->_request->getParams();
             $incrementalId = $response[self::RESPONSE_REFERENCE];
+            $id = $this->getRealId($incrementalId);
+            if(!$id) {
+                $id = $this->checkoutSession->getLastOrderId();
+            }
 
-            $order = $this->orderFactory->create();
-            $this->orderResource->load($order, $incrementalId, OrderInterface::INCREMENT_ID);
-
-            if($order->getState() == Order::STATE_PENDING_PAYMENT) {
-                if ($incrementalId && $order && isset($response[self::RESPONSE_PAYMENT_UUID])) { //payment was authorized
+            if($incrementalId && $id) {
+                /**@var Order $order */
+                $order = $this->orderRepository->get($id);
+                if ($order && $order->getState() == Order::STATE_PENDING_PAYMENT &&
+                    isset($response[self::RESPONSE_PAYMENT_UUID])) { //payment was authorized
                     $payment = $order->getPayment();
                     ContextHelper::assertOrderPayment($payment);
                     if ($payment->getMethod() === $this->method->getCode()) {
                         if ($order->getState() == Order::STATE_PENDING_PAYMENT) {
                             $this->commandPool->get('capture')->execute(
                                 [
-                                    'reference' => $incrementalId,
+                                    'magentoOrderId' => $order->getId(),
+                                    'reference'   => $incrementalId,
                                     'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
                                 ]
                             );
@@ -195,6 +193,34 @@ class Confirm implements ActionInterface
 
     private function setRedirect(string $configValue) {
         return $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
+    }
+
+    /**
+     * Get order id by order increment id.
+     *
+     * @param string|int $incrementalId
+     * @return int
+     */
+    public function getRealId($incrementalId): int
+    {
+        $result = 0;
+        try {
+            /** @var  AdapterInterface $adapter */
+            $adapter = $this->resource->getConnection();
+            $bind = [':increment_id' => $incrementalId];
+            /** @var Select $select */
+            $select = $adapter->select();
+            $select->from($this->resource->getMainTable(), $this->resource->getIdFieldName())
+                ->where('increment_id = :increment_id');
+            $entityId = $adapter->fetchOne($select, $bind);
+            if ($entityId > 0) {
+                $result = (int)$entityId;
+            }
+        } catch (Exception $e) {
+            $result = 0;
+        }
+
+        return $result;
     }
 
     /**

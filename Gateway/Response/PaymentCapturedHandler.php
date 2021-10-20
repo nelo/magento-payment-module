@@ -5,7 +5,6 @@ namespace Nelo\Bnpl\Gateway\Response;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\Data\TransactionInterface;
 use Magento\Sales\Api\Data\TransactionSearchResultInterfaceFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -69,16 +68,6 @@ class PaymentCapturedHandler implements HandlerInterface
     private $invoiceRepository;
 
     /**
-     * @var OrderResourceInterface
-     */
-    private $orderResource;
-
-    /**
-     * @var OrderInterfaceFactory
-     */
-    private $orderFactory;
-
-    /**
      * PaymentCapturedHandler constructor.
      *
      * @param LoggerInterface $logger
@@ -89,8 +78,6 @@ class PaymentCapturedHandler implements HandlerInterface
      * @param TransactionRepositoryInterface $transactionsRepository
      * @param OrderPaymentRepositoryInterface $paymentsRepository
      * @param InvoiceRepositoryInterface $invoiceRepository
-     * @param OrderResourceInterface $orderResource
-     * @param OrderInterfaceFactory $orderFactory
      */
     public function __construct(
         LoggerInterface $logger,
@@ -100,9 +87,7 @@ class PaymentCapturedHandler implements HandlerInterface
         TransactionSearchResultInterfaceFactory $transactionSearchResultFactory,
         TransactionRepositoryInterface $transactionsRepository,
         OrderPaymentRepositoryInterface $paymentsRepository,
-        InvoiceRepositoryInterface $invoiceRepository,
-        OrderResourceInterface $orderResource,
-        OrderInterfaceFactory $orderFactory
+        InvoiceRepositoryInterface $invoiceRepository
     ) {
         $this->logger                         = $logger;
         $this->ordersRepository               = $ordersRepository;
@@ -112,8 +97,6 @@ class PaymentCapturedHandler implements HandlerInterface
         $this->transactionsRepository         = $transactionsRepository;
         $this->paymentsRepository             = $paymentsRepository;
         $this->invoiceRepository              = $invoiceRepository;
-        $this->orderResource                  = $orderResource;
-        $this->orderFactory                   = $orderFactory;
     }
 
     /**
@@ -122,10 +105,11 @@ class PaymentCapturedHandler implements HandlerInterface
      */
     public function handle(array $handlingSubject, array $response)
     {
+        $orderId = $handlingSubject['magentoOrderId'];
         $paymentId = $handlingSubject['paymentUuid'];
         $incrementalId = $handlingSubject['reference'];
-        $order = $this->orderFactory->create();
-        $this->orderResource->load($order, $incrementalId, OrderInterface::INCREMENT_ID);
+        /** @var Order $order */
+        $order = $this->ordersRepository->get($orderId);
 
         if($this->getTransaction($order->getId(), $paymentId) == NULL) { // Making our module idempotent too
             try {
