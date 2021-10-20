@@ -4,6 +4,11 @@ namespace Nelo\Bnpl\Controller\Payment;
 
 use Exception;
 use Magento\Checkout\Model\Session;
+use Magento\Framework\Api\Filter;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\Search\FilterGroup;
+use Magento\Framework\Api\Search\FilterGroupBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\ActionInterface;
 use Magento\Payment\Gateway\ConfigInterface;
@@ -16,11 +21,9 @@ use Magento\Payment\Gateway\Command\CommandPoolInterface;
 use Magento\Payment\Gateway\Helper\ContextHelper;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Sales\Api\Data\OrderInterface;
-use Magento\Sales\Api\Data\OrderInterfaceFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Payment\Model\MethodInterface;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Spi\OrderResourceInterface;
 use Psr\Log\LoggerInterface;
 
 
@@ -89,14 +92,19 @@ class Confirm implements ActionInterface
     private $urlInterface;
 
     /**
-     * @var OrderResourceInterface
+     * @var SearchCriteriaBuilder
      */
-    private $orderResource;
+    private $searchCriteriaBuilder;
 
     /**
-     * @var OrderInterfaceFactory
+     * @var FilterBuilder
      */
-    private $orderFactory;
+    private $filterBuilder;
+
+    /**
+     * @var FilterGroupBuilder
+     */
+    private $filterGroupBuilder;
 
     /**
      * Confirm constructor.
@@ -110,6 +118,9 @@ class Confirm implements ActionInterface
      * @param LoggerInterface $logger
      * @param ConfigInterface $config
      * @param UrlInterface $urlInterface
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param FilterBuilder $filterBuilder
+     * @param FilterGroupBuilder $filterGroupBuilder
      */
     public function __construct(
         Context $context,
@@ -121,8 +132,9 @@ class Confirm implements ActionInterface
         LoggerInterface $logger,
         ConfigInterface $config,
         UrlInterface $urlInterface,
-        OrderResourceInterface $orderResource,
-        OrderInterfaceFactory $orderFactory
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        FilterBuilder $filterBuilder,
+        FilterGroupBuilder $filterGroupBuilder
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -135,8 +147,9 @@ class Confirm implements ActionInterface
         $this->logger                   = $logger;
         $this->config                   = $config;
         $this->urlInterface             = $urlInterface;
-        $this->orderResource            = $orderResource;
-        $this->orderFactory             = $orderFactory;
+        $this->searchCriteriaBuilder    = $searchCriteriaBuilder;
+        $this->filterBuilder            = $filterBuilder;
+        $this->filterGroupBuilder       = $filterGroupBuilder;
     }
 
     /**
@@ -147,19 +160,18 @@ class Confirm implements ActionInterface
         try {
             $response = $this->_request->getParams();
             $incrementalId = $response[self::RESPONSE_REFERENCE];
+            $order = $this->getOrderByIncrementId($incrementalId);
 
-            $order = $this->orderFactory->create();
-            $this->orderResource->load($order, $incrementalId, OrderInterface::INCREMENT_ID);
-
-            if($order->getState() == Order::STATE_PENDING_PAYMENT) {
-                if ($incrementalId && $order && isset($response[self::RESPONSE_PAYMENT_UUID])) { //payment was authorized
+            if($incrementalId && $order && $order->getState() == Order::STATE_PENDING_PAYMENT) {
+                if (isset($response[self::RESPONSE_PAYMENT_UUID])) { //payment was authorized
                     $payment = $order->getPayment();
                     ContextHelper::assertOrderPayment($payment);
                     if ($payment->getMethod() === $this->method->getCode()) {
                         if ($order->getState() == Order::STATE_PENDING_PAYMENT) {
                             $this->commandPool->get('capture')->execute(
                                 [
-                                    'reference' => $incrementalId,
+                                    'magentoOrderId'     => $order->getEntityId(),
+                                    'reference'   => $incrementalId,
                                     'paymentUuid' => $response[self::RESPONSE_PAYMENT_UUID],
                                 ]
                             );
@@ -195,6 +207,17 @@ class Confirm implements ActionInterface
 
     private function setRedirect(string $configValue) {
         return $this->_response->setRedirect($this->urlInterface->getBaseUrl() . $this->config->getValue($configValue));
+    }
+
+    public function getOrderByIncrementId($incrementId): ?OrderInterface
+    {
+        $filter = $this->filterBuilder->setField(OrderInterface::INCREMENT_ID)->setValue($incrementId)->create();
+        /** @var FilterGroup $filterGroup */
+        $filterGroup = $this->filterGroupBuilder->setFilters([$filter])->create();
+        $criteria = $this->searchCriteriaBuilder->create();
+        $criteria->setFilterGroups([$filterGroup]);
+        $orders = $this->orderRepository->getList($criteria)->getItems();
+        return count($orders)? reset($orders) : null;
     }
 
     /**
