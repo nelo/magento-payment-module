@@ -80,6 +80,11 @@ class Start implements ActionInterface
     private $orderRepository;
 
     /**
+     * @var UrlInterface
+     */
+    private $urlInterface;
+
+    /**
      * @var ConfigInterface
      */
     private $config;
@@ -94,6 +99,7 @@ class Start implements ActionInterface
      * @param OrderRepositoryInterface $orderRepository
      * @param PaymentDataObjectFactory $paymentDataObjectFactory
      * @param Session $checkoutSession
+     * @param UrlInterface $urlInterface
      * @param PaymentFailuresInterface|null $paymentFailures
      * @param ConfigInterface $config
      */
@@ -104,8 +110,9 @@ class Start implements ActionInterface
         OrderRepositoryInterface $orderRepository,
         PaymentDataObjectFactory $paymentDataObjectFactory,
         Session $checkoutSession,
-        PaymentFailuresInterface $paymentFailures = null,
-        ConfigInterface $config
+        UrlInterface $urlInterface,
+        ConfigInterface $config,
+        PaymentFailuresInterface $paymentFailures = null
     ) {
         $this->_request                 = $context->getRequest();
         $this->_response                = $context->getResponse();
@@ -117,6 +124,7 @@ class Start implements ActionInterface
         $this->checkoutSession          = $checkoutSession;
         $this->paymentFailures          = $paymentFailures ?: $this->_objectManager->get(PaymentFailuresInterface::class);
         $this->orderRepository          = $orderRepository;
+        $this->urlInterface             = $urlInterface;
         $this->config                   = $config;
     }
 
