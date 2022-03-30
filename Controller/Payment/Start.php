@@ -16,6 +16,7 @@ use Magento\Framework\ObjectManagerInterface;
 use Magento\Payment\Gateway\Command\CommandPoolInterface;
 use Magento\Payment\Gateway\Data\PaymentDataObjectFactory;
 use Magento\Payment\Gateway\Helper\ContextHelper;
+use Magento\Framework\UrlInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Api\PaymentFailuresInterface;
 use Magento\Sales\Model\Order;
